@@ -10,7 +10,7 @@ const App = props => {
     //     destroyed: false
     // });
     const [chosenSide, setChosenSide] = useState("light");
-    const [selectedCharacter, setSelectedCharacter] = useState("1");
+    const [selectedCharacter, setSelectedCharacter] = useState(1);
     const [destroyed, setDestroyed] = useState(false);
 
     const sideHandler = side => {
