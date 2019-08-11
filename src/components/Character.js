@@ -1,76 +1,27 @@
-import React, { useState, useEffect } from "react";
-
+import React, { useEffect } from "react";
+import useHttp from "../hooks/http";
 import Summary from "./Summary";
 
 const Character = props => {
-    const [loadedCharacter, setLoadedCharacter] = useState({});
-    const [isLoading, setIsLoading] = useState(false);
-
-    const fetchData = () => {
-        console.log(
-            "Sending Http request for new character with id " +
-                props.selectedChar
-        );
-        setIsLoading(true);
-        fetch("https://swapi.co/api/people/" + props.selectedChar)
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error("Could not fetch person!");
-                }
-                return response.json();
-            })
-            .then(charData => {
-                const loadedCharacter = {
-                    id: props.selectedChar,
-                    name: charData.name,
-                    height: charData.height,
-                    colors: {
-                        hair: charData.hair_color,
-                        skin: charData.skin_color
-                    },
-                    gender: charData.gender,
-                    movieCount: charData.films.length
-                };
-                setLoadedCharacter(loadedCharacter);
-                setIsLoading(false);
-            })
-            .catch(err => {
-                console.log(err);
-                setIsLoading(false);
-            });
-    };
-    // shouldComponentUpdate(nextProps, nextState) {
-    //   console.log('shouldComponentUpdate');
-    //   return (
-    //     nextProps.selectedChar !== this.props.selectedChar ||
-    //     nextState.loadedCharacter.id !== this.state.loadedCharacter.id ||
-    //     nextState.isLoading !== this.state.isLoading
-    //   );
-    // }
-
-    // componentDidUpdate(prevProps) {
-    //   console.log('Component did update');
-    //   if (prevProps.selectedChar !== this.props.selectedChar) {
-    //     this.fetchData();
-    //   }
-    // }
-    //componentDidUpDate, set your dependencies to the variable that you want it to listen for, it will update that when it is changed
-    useEffect(() => {
-        fetchData();
-        // this code will run right before useEffect runs the next time  (componentWillUnmount), a cleanup function
-        return () => {
-            console.log("cleaning up... unmount");
+    const [isLoading, fetchedData] = useHttp(
+        "https://swapi.co/api/people/" + props.selectedChar,
+        [props.selectedChar]
+    );
+    let loadedCharacter = null;
+    if (fetchedData) {
+        loadedCharacter = {
+            id: props.selectedChar,
+            name: fetchedData.name,
+            height: fetchedData.height,
+            colors: {
+                hair: fetchedData.hair_color,
+                skin: fetchedData.skin_color
+            },
+            gender: fetchedData.gender,
+            movieCount: fetchedData.films.length
         };
-    }, [props.selectedChar]);
+    }
 
-    //dont send a redundent http request from useEffect twice
-    // useEffect(() => {
-    //     fetchData();
-    // }, []);
-
-    // componentWillUnmount() {
-    //   console.log('Too soon...');
-    // }
     useEffect(() => {
         return () => {
             console.log("component did unmount");
@@ -79,7 +30,7 @@ const Character = props => {
 
     let content = <p>Loading Character...</p>;
 
-    if (!isLoading && loadedCharacter.id) {
+    if (!isLoading && loadedCharacter) {
         content = (
             <Summary
                 name={loadedCharacter.name}
@@ -90,10 +41,15 @@ const Character = props => {
                 movieCount={loadedCharacter.movieCount}
             />
         );
-    } else if (!isLoading && !loadedCharacter.id) {
+    } else if (!isLoading && !loadedCharacter) {
         content = <p>Failed to fetch character.</p>;
     }
     return content;
 };
 
-export default Character;
+// 2nd argument isn't really necessary, because it automatically knows what to check
+export default React.memo(Character);
+// (prevProps, nextProps) => {
+//     // return true if you DONT want it to rerender, false if you want to (opposite of shouldcomponentdidupdate)
+//     return nextProps.selectedChar === prevProps.selectedChar;
+// });
